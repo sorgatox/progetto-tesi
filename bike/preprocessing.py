@@ -1,8 +1,12 @@
-import polars as pl
-
 #########################
 #   DATASET BICICLETTE  #
 #########################
+
+import polars as pl
+
+###
+# PREPROCESSING
+###
 
 schema_overrides = {
     "start_station_id": pl.Utf8,
@@ -12,11 +16,10 @@ schema_overrides = {
 }
 
 bike = pl.read_csv(
-    "data/202401-tripdata.csv",
+    "originaldata/202401-tripdata.csv",
     schema_overrides=schema_overrides
 )
 
-print(bike.height)
 #print(bike.schema)
 
 '''
@@ -29,10 +32,11 @@ print("Valori unici in 'member_casual':", values)
 '''
 
 #cast dei dati in Enumerici (Factor di R)
-bike = bike.with_columns(
-    pl.col("rideable_type").cast(pl.Enum(["electric_bike", "classic_bike"])),
-    pl.col("member_casual").cast(pl.Enum(["member", "casual"]))
-)
+def cast_enum(df):
+    return df.with_columns(
+        pl.col("rideable_type").cast(pl.Enum(["electric_bike", "classic_bike"])),
+        pl.col("member_casual").cast(pl.Enum(["member", "casual"]))
+    )
 
 '''
 #valori nulli?
@@ -63,26 +67,42 @@ bike = bike.with_columns(
     pl.col("duration_sec") > 0
 )
 
-
+'''
 print("=== HEAD ===")
 print(bike.head())
 
-print(bike.height)
-
-'''
 print("\n=== DIMENSIONI FINALI ===")
 print(bike.shape)
 
 print("\n=== SCHEMA FINALE ===")
 print(bike.schema)
+
+
+# i giorni sono 31? NO, c'è anche il 2023-12-31
+days = bike["started_at"].dt.date().unique()
+print(days)
+print(len(days))
+
+days = bike["ended_at"].dt.date().unique()
+print(days)
+print(len(days))
+
+december = bike.filter(pl.col("started_at").dt.date() == pl.date(2023, 12, 31))
+print(december) #318 osservazioni
+print(december['ride_id'].n_unique()) #378 ID
 '''
 
+bike = bike.filter(pl.col("started_at").dt.date() != pl.date(2023, 12, 31))
 
-###
-# ANALISI DEL REPORT
-###
+'''
+days = bike["started_at"].dt.date().unique()
+print(days)
+print(len(days))
+'''
 
-# https://mot-marketing-whitelabel-prod.s3.amazonaws.com/nyc/January-2024-Citi-Bike-Monthly-Report.pdf
+# aggiunto giorni della settimana
+bike = bike.with_columns(pl.col("started_at").dt.weekday().alias("weekday"))
 
-
+# salvataggio
+bike.write_csv("bike/tripdata.csv")
 
