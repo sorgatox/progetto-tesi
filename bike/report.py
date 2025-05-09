@@ -4,6 +4,9 @@
 
 import preprocessing as pre
 import polars as pl
+import opendp.prelude as dp
+
+dp.enable_features("contrib")
 
 schema_overrides = {
     "start_station_id": pl.Utf8,
@@ -18,10 +21,17 @@ bike = pl.read_csv(
     schema_overrides=schema_overrides
 )
 bike = pre.cast_enum(bike)
-print(bike.schema)
 
-#df dataset
-df = pl.scan_csv("bike/tripdata.csv")
+#DP dataset
+df = pl.scan_csv(
+    "bike/tripdata.csv",
+    schema_overrides=schema_overrides
+)
+
+df = df.with_columns(
+    pl.col("rideable_type").cast(pl.Enum(["electric_bike", "classic_bike"])),
+    pl.col("member_casual").cast(pl.Enum(["member", "casual"]))
+)
 
 
 
@@ -36,7 +46,20 @@ df = pl.scan_csv("bike/tripdata.csv")
 total_trips = bike.height
 print(f"Numero corse totale di gennaio 2024: {total_trips}")
 
+context = dp.Context.compositor(
+    data = df,
+    privacy_unit = dp.unit_of(contributions=1),
+    privacy_loss = dp.loss_of(epsilon=1.0),
+    split_evenly_over = 1             
+)
 
+query_num_responses = context.query().select(dp.len())
+result = query_num_responses.release().collect()
+
+# Stampa il risultato
+print(f"Numero corse totale di gennaio 2024 con DP: {result.item()}")
+
+'''
 # CORSE PER GIORNO - media (sapendo che i giorni di gennaio sono 31 dal preprocessing)
 mean_trips = total_trips / 31
 print(f"Media corse al giorno: {mean_trips}")
@@ -57,3 +80,4 @@ end_stations = bike.group_by("end_station_name").len().sort("len", descending=Tr
 print(f"Stazioni più popolari di arrivo: {end_stations}")
 
 
+'''
