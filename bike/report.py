@@ -61,7 +61,7 @@ result = query_num_responses.release().collect()
 print(f"Numero corse totale di gennaio 2024 con DP: {result.item()}")
 print(query_num_responses.summarize(alpha=0.05))
 accuracy = query_num_responses.summarize(alpha=0.05)["accuracy"][0]
-relative_error = (accuracy / result.item()) * 100  
+relative_error = abs(result.item() - total_trips) / total_trips * 100  
 print(f"Errore relativo: {relative_error}%")
 
 
@@ -114,6 +114,7 @@ print(f"Errore relativo: {relative_error}%")
 
 
 # MEDIA DELLE CORSE PER GIORNO DELLA SETTIMANA
+print("\n\nMEDIA DELLE CORSE PER GIORNO DELLA SETTIMANA\n")
 trips_weekday = bike.group_by("weekday").len()
 freq_df = pl.DataFrame({
     "weekday": ["Monday", "Tuesday", "Wednesday", "Thursday","Friday","Saturday","Sunday"],
@@ -155,7 +156,7 @@ print(query_counts.summarize(alpha=0.05))
 
 
 #crea grafico
-dfplot.plot_average_rides_comparison(trips_weekday, result)
+#dfplot.plot_average_rides_comparison(trips_weekday, result)
 
 '''
 # STAZIONI PIU' POPOLARI
