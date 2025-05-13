@@ -3,10 +3,12 @@
 #########################
 
 import preprocessing as pre
+import dfplot
 import polars as pl
 import opendp.prelude as dp
 
-dp.enable_features("contrib")
+
+dp.enable_features("contrib", "floating-point")
 
 schema_overrides = {
     "start_station_id": pl.Utf8,
@@ -38,10 +40,10 @@ df = pre.cast_enum(df)
 
 # https://mot-marketing-whitelabel-prod.s3.amazonaws.com/nyc/January-2024-Citi-Bike-Monthly-Report.pdf
 
-eps = 0.1
+eps = 0.01
 
 # NUMERO TOTALE DELLE CORSE
-'''print("NUMERO TOTALE DELLE CORSE\n")
+print("NUMERO TOTALE DELLE CORSE\n")
 total_trips = bike.height
 
 print(f"Numero corse totale di gennaio 2024: {total_trips}")
@@ -108,7 +110,7 @@ print(f"Media durata di ogni corsa con DP: {result["mean"][0]} secondi")
 print(query_duration.summarize(alpha=0.05))
 
 relative_error = abs(result["mean"][0] - mean_duration.item()) / mean_duration.item() * 100  
-print(f"Errore relativo: {relative_error}%")'''
+print(f"Errore relativo: {relative_error}%")
 
 
 # MEDIA DELLE CORSE PER GIORNO DELLA SETTIMANA
@@ -151,6 +153,9 @@ result = (
 print(f"Totale corse per giorno della settimana con DP: {result}")
 print(query_counts.summarize(alpha=0.05))
 
+
+#crea grafico
+dfplot.plot_average_rides_comparison(trips_weekday, result)
 
 '''
 # STAZIONI PIU' POPOLARI
