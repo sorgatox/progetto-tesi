@@ -82,6 +82,9 @@ result = query_num_responses.release().collect()
 
 print(f"Numero corse totale di gennaio 2024 con DP: {result.item()/31}")
 
+relative_error = abs((result.item()/31) - mean_trips) / mean_trips * 100  
+print(f"Errore relativo: {relative_error}%")
+
 
 # DURATA MEDIA DELLA CORSA
 print("\n\nDURATA MEDIA DELLA CORSA\n")
