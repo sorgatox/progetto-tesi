@@ -33,9 +33,11 @@ print("Valori unici in 'member_casual':", values)
 
 #cast dei dati in Enumerici (Factor di R)
 def cast_enum(df):
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     return df.with_columns(
         pl.col("rideable_type").cast(pl.Enum(["electric_bike", "classic_bike"])),
-        pl.col("member_casual").cast(pl.Enum(["member", "casual"]))
+        pl.col("member_casual").cast(pl.Enum(["member", "casual"])),
+        (pl.col("weekday") - 1).cast(pl.Enum(days)).alias("weekday")
     )
 
 '''
