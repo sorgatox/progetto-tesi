@@ -103,16 +103,21 @@ context = dp.Context.compositor(
     ],        
 )
 
-query_duration = context.query().select(
-    pl.col("duration_sec").cast(int).fill_null(0).dp.sum(bounds=(0, 31 * 24 * 3600)),
-    dp.len()
+query_duration = (
+    context.query()
+    .select(
+        pl.col("duration_sec")
+        .cast(int)
+        .fill_null(540)
+        .dp.mean(bounds=(0, 24*2*3600)) 
+    )
 )
-result = query_duration.release().collect().with_columns(mean = pl.col("duration_sec") / pl.col.len)
+result = query_duration.release().collect()
 
-print(f"Media durata di ogni corsa con DP: {result["mean"][0]} secondi")
+print(f"Media durata di ogni corsa con DP: {result.item()} secondi")
 print(query_duration.summarize(alpha=0.05))
 
-relative_error = abs(result["mean"][0] - mean_duration.item()) / mean_duration.item() * 100  
+relative_error = abs(result.item() - mean_duration.item()) / mean_duration.item() * 100  
 print(f"Errore relativo: {relative_error}%")
 
 
@@ -156,7 +161,6 @@ result = (
 
 print(f"Totale corse per giorno della settimana con DP: {result}")
 print(query_counts.summarize(alpha=0.05))
-
 
 #crea grafico
 #dfplot.plot_average_rides_comparison(trips_weekday, result)
