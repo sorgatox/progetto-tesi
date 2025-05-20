@@ -6,6 +6,7 @@ import preprocessing as pre
 import dfplot
 import polars as pl
 import opendp.prelude as dp
+import math
 
 dp.enable_features("contrib", "floating-point")
 
@@ -88,6 +89,7 @@ print(f"Errore relativo: {relative_error}%")
 # DURATA MEDIA DELLA CORSA
 print("\n\nDURATA MEDIA DELLA CORSA\n")
 mean_duration = bike.select(pl.col("duration_sec").mean())
+sum_duration = bike.select(pl.col("duration_sec").sum())
 print(f"Media durata di ogni corsa: {mean_duration.item()} secondi")
 
 context = dp.Context.compositor(
@@ -114,8 +116,15 @@ query_duration = (
 result = query_duration.release().collect()
 
 print(f"Media durata di ogni corsa con DP: {result.item()} secondi")
-print(query_duration.summarize(alpha=0.05))
-
+summary = query_duration.summarize(alpha=0.05)
+acc_sum = summary.filter(pl.col("aggregate") == "Sum")["accuracy"].item()
+acc_len = summary.filter(pl.col("aggregate") == "Length")["accuracy"].item()
+print(summary)
+acc_mean = math.sqrt(
+    (acc_sum / total_trips) ** 2 +
+    ((sum_duration.item() * acc_len) / (total_trips ** 2)) ** 2
+)
+print(f"accurancy mean: {acc_mean}")
 relative_error = abs(result.item() - mean_duration.item()) / mean_duration.item() * 100  
 print(f"Errore relativo: {relative_error}%")
 
