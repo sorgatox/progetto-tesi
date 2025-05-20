@@ -7,7 +7,6 @@ import dfplot
 import polars as pl
 import opendp.prelude as dp
 
-
 dp.enable_features("contrib", "floating-point")
 
 schema_overrides = {
@@ -165,12 +164,49 @@ print(query_counts.summarize(alpha=0.05))
 #crea grafico
 #dfplot.plot_average_rides_comparison(trips_weekday, result)
 
-'''
+
 # STAZIONI PIU' POPOLARI
-start_stations = bike.group_by("start_station_name").len().sort("len", descending=True).head(10)
+start_stations = bike.group_by("start_station_id").len().sort("len", descending=True).head(10)
 print(f"Stazioni più popolari di partenza: {start_stations}")
-end_stations = bike.group_by("end_station_name").len().sort("len", descending=True).head(10)
+
+context = dp.Context.compositor(
+    data = df,
+    privacy_unit = dp.unit_of(contributions=1),
+    privacy_loss = dp.loss_of(epsilon=eps),
+    split_evenly_over = 1,
+    margins = [dp.polars.Margin(by=["start_station_id"], public_info="keys")]            
+)
+
+query_start_counts = (
+    context.query()
+    .group_by("start_station_id")
+    .agg(dp.len())
+)
+result = query_start_counts.release().collect()
+result = result.with_columns(pl.col("start_station_id").cast(pl.Utf8))
+
+print(f"Stazioni più popolari di partenza con DP: {result.sort("len", descending=True).head(10)}")
+print(query_start_counts.summarize(alpha=0.05))
+
+
+end_stations = bike.group_by("end_station_id").len().sort("len", descending=True).head(10)
 print(f"Stazioni più popolari di arrivo: {end_stations}")
 
+context = dp.Context.compositor(
+    data = df,
+    privacy_unit = dp.unit_of(contributions=1),
+    privacy_loss = dp.loss_of(epsilon=eps),
+    split_evenly_over = 1,
+    margins = [dp.polars.Margin(by=["end_station_id"], public_info="keys")]            
+)
 
-'''
+query_end_counts = (
+    context.query()
+    .group_by("end_station_id")
+    .agg(dp.len())
+)
+result = query_end_counts.release().collect()
+result = result.with_columns(pl.col("end_station_id").cast(pl.Utf8))
+
+print(f"Stazioni più popolari di arrivo con DP: {result.sort("len", descending=True).head(10)}")
+print(query_end_counts.summarize(alpha=0.05))
