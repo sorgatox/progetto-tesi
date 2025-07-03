@@ -74,11 +74,12 @@ range = pl.DataFrame({
     "max": maxs
 })
 
+'''
 filename = f"bike/samplecsv/range.csv"
 range.write_csv(filename)
+'''
 
-
-
+'''
 accuracies = []
 for eps in leps:
     #invariant keys - giorni della settimana sono pubblici
@@ -107,10 +108,13 @@ acc_eps = pl.DataFrame({
     "epsilon": leps,
     "accuracy": accuracies
 })
-
+'''
 #print(acc_eps)
 
 '''
 filename = f"bike/samplecsv/eps_{num}.csv"
 acc_eps.write_csv(filename)
 '''
+
+#crea grafici
+dfplot.plot_acceps()

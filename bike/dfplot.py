@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import polars as pl
 
 
 def plot_average_rides_comparison(df, df_dp):
@@ -24,3 +25,60 @@ def plot_average_rides_comparison(df, df_dp):
 
     plt.tight_layout()
     plt.savefig("bike/weekplt.png")
+
+def plot_acceps(df = pl.read_csv("bike/samplecsv/eps_1000.csv")):
+    epsilons = df["epsilon"].round(3).to_list()
+    accuracies = df["accuracy"].round(3).to_list()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(epsilons, accuracies, marker='.', linestyle='-', color='blue')
+
+    ax.set_xlabel("Epsilon")
+    ax.set_ylabel("Accuratezza")
+    ax.set_title("Accuratezza in funzione di epsilon")
+    ax.grid(True, linestyle="--", alpha=0.7)
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.set_xticks([round(i * 0.1, 1) for i in range(11)])
+
+    plt.tight_layout()
+    plt.savefig("bike/acceps.png")
+
+    df1 = df.filter(pl.col("epsilon") >= 0.01)
+    epsilons = df1["epsilon"].round(3).to_list()
+    accuracies = df1["accuracy"].round(3).to_list()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(epsilons, accuracies, marker='.', linestyle='-', color='blue')
+
+    ax.set_xlabel("Epsilon")
+    ax.set_ylabel("Accuratezza")
+    ax.set_title("Accuratezza in funzione di epsilon")
+    ax.grid(True, linestyle="--", alpha = 0.7)
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.set_xticks([round(i * 0.1, 1) for i in range(11)])
+
+    plt.tight_layout()
+    plt.savefig("bike/acceps1.png")
+
+    df2 = df.filter(pl.col("epsilon") >= 0.1)
+    epsilons = df2["epsilon"].round(3).to_list()
+    accuracies = df2["accuracy"].round(3).to_list()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(epsilons, accuracies, marker='.', linestyle='-', color='blue')
+
+    ax.set_xlabel("Epsilon")
+    ax.set_ylabel("Accuratezza")
+    ax.set_title("Accuratezza in funzione di epsilon")
+    ax.grid(True, linestyle="--", alpha = 0.7)
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.set_xticks([round(i * 0.1, 1) for i in range(11)])
+
+    plt.tight_layout()
+    plt.savefig("bike/acceps2.png")
