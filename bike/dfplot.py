@@ -16,7 +16,7 @@ def plot_average_rides_comparison(df, df_dp):
     ax.bar([i - width/2 for i in x], average_raw, width=width, label="Senza DP")
     ax.bar([i + width/2 for i in x], average_dp, width=width, label="Con DP")
 
-    ax.set_ylabel("Corse medie")
+    ax.set_ylabel("Numero di corse medie")
     ax.set_title("Confronto delle corse medie per giorno della settimana")
     ax.set_xticks(x)
     ax.set_xticklabels(weekdays)
@@ -24,7 +24,7 @@ def plot_average_rides_comparison(df, df_dp):
     ax.grid(axis="y", linestyle="--", alpha=0.7)
 
     plt.tight_layout()
-    plt.savefig("bike/weekplt.png")
+    plt.savefig("bike/weekplt/weekplt.png")
 
 def plot_total_rides_comparison(df, df_dp, eps, num):
     weekdays =  ["Monday", "Tuesday", "Wednesday", "Thursday","Friday","Saturday","Sunday"]

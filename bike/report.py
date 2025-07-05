@@ -171,7 +171,7 @@ print(f"Totale corse per giorno della settimana con DP: {result}")
 print(query_counts.summarize(alpha=0.05))
 
 #crea grafico
-#dfplot.plot_average_rides_comparison(trips_weekday, result)
+dfplot.plot_average_rides_comparison(trips_weekday, result)
 
 
 # STAZIONI PIU' POPOLARI
