@@ -128,10 +128,7 @@ bikes = bike.sample(n = num, with_replacement = False, seed = 1234)
 dfs = bikes.lazy()
 
 trips_weekday = bikes.group_by("weekday").len()
-trips_weekday = trips_weekday.with_columns(
-    pl.col("weekday").cast(pl.Utf8),
-    pl.col("len").cast(pl.Int64)
-)
+trips_weekday = trips_weekday.with_columns(pl.col("len").cast(pl.Int64))
 
 #difference
 week_diff = trips_weekday.join(trips_weekday, how = "cross")

@@ -28,6 +28,8 @@ def plot_average_rides_comparison(df, df_dp):
 
 def plot_total_rides_comparison(df, df_dp, eps, num):
     weekdays =  ["Monday", "Tuesday", "Wednesday", "Thursday","Friday","Saturday","Sunday"]
+    df = df.sort("weekday", descending = False)
+    df_dp = df_dp.sort("weekday", descending = False)
     total_raw = df["len"].to_list()
     total_dp = df_dp["len"].to_list()
 
