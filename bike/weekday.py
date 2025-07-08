@@ -96,3 +96,54 @@ print(f"Differenza (MIN, MEAN e MAX) tra i conteggi per giorno della settimana c
 dfplot.plot_total_rides_comparison(trips_weekday, result, eps, num)
 
 
+
+#sample original dataset
+bikes = bike.sample(n = num, with_replacement = False, seed = 1234)
+
+#DP dataset
+dfs = bikes.lazy()
+
+trips_weekday = bikes.group_by("weekday").len()
+trips_weekday = trips_weekday.with_columns(pl.col("len").cast(pl.Int64))
+
+#difference
+week_diff = trips_weekday.join(trips_weekday, how = "cross")
+week_diff = week_diff.filter(pl.col("weekday") < pl.col("weekday_right"))
+week_diff = week_diff.with_columns((abs(pl.col("len") - pl.col("len_right"))).alias("diff"))
+week_diff = week_diff.select(["weekday", "weekday_right", "len", "len_right", "diff"])
+min_diff = week_diff.select(pl.col("diff").min())
+max_diff = week_diff.select(pl.col("diff").max())
+mean_diff = week_diff.select(pl.col("diff").mean())
+
+print(f"Totale corse per giorno della settimana: {trips_weekday}")
+print(f"Differenze: {week_diff}")
+print(f"Minima differenza tra i conteggi per giorno della settimana: {min_diff.item()}")
+print(f"Massima differenza tra i conteggi per giorno della settimana: {max_diff.item()}")
+print(f"Differenza media tra i conteggi per giorno della settimana: {mean_diff.item()}")
+
+#filename = f"bike/samplecsv/diff_{num}.csv"
+#week_diff.write_csv(filename)
+
+#invariant keys - giorni della settimana sono pubblici
+context = dp.Context.compositor(
+    data = dfs,
+    privacy_unit = dp.unit_of(contributions=1),
+    privacy_loss = dp.loss_of(epsilon=eps),
+    split_evenly_over = 1,
+    margins = [dp.polars.Margin(by=["weekday"], public_info="keys")]            
+)
+
+query_counts = (
+    context.query()
+    .group_by("weekday")
+    .agg(dp.len())
+)
+result = query_counts.release().collect()
+result = result.with_columns(pl.col("len").cast(pl.Int64))
+summary = query_counts.summarize(alpha=0.05)
+acc_value = summary.select("accuracy").to_series()[0]
+
+print(f"Totale corse per giorno della settimana con DP: {result}")
+print(summary)
+
+dfplot.plot_total_rides_comparison(trips_weekday, result, eps, num)
