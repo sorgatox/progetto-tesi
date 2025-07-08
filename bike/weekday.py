@@ -27,20 +27,15 @@ bike = pl.read_csv(
 bike = pre.cast_enum(bike)
 
 #sample dei dati
-num = bike.height
-#num = 1000
-#bike = bike.sample(n = num, with_replacement = False, seed = 1234)
+num = 500000
+bike = bike.sample(n = num, with_replacement = False, seed = 1234)
 
 #DP dataset
 df = bike.lazy()
 
-eps = 0.01
-
 trips_weekday = bike.group_by("weekday").len()
 trips_weekday = trips_weekday.sort("weekday")
-trips_weekday = trips_weekday.with_columns(
-    pl.col("weekday").cast(pl.Utf8),
-    pl.col("len").cast(pl.Int64))
+trips_weekday = trips_weekday.with_columns(pl.col("len").cast(pl.Int64))
 
 
 #difference
@@ -52,8 +47,14 @@ min_diff = week_diff.select(pl.col("diff").min())
 max_diff = week_diff.select(pl.col("diff").max())
 mean_diff = week_diff.select(pl.col("diff").mean())
 
+print(f"Totale corse per giorno della settimana: {trips_weekday}")
+print(f"Differenza (MIN, MEAN e MAX) tra i conteggi per giorno della settimana: {[min_diff.item(), mean_diff.item(), max_diff.item()]}")
+
+filename = f"bike/samplecsv/diff_{num}.csv"
+week_diff.write_csv(filename)
 
 #invariant keys - giorni della settimana sono pubblici
+eps = 0.01
 context = dp.Context.compositor(
     data = df,
     privacy_unit = dp.unit_of(contributions=1),
@@ -71,79 +72,35 @@ result = query_counts.release().collect().sort("weekday")
 result = result.with_columns(pl.col("len").cast(pl.Int64))
 
 
-#difference DP
-week_diffDP = result.join(result, how = "cross")
-week_diffDP = week_diffDP.filter(pl.col("weekday") < pl.col("weekday_right"))
-week_diffDP = week_diffDP.with_columns((abs(pl.col("len") - pl.col("len_right"))).alias("diff"))
-week_diffDP = week_diffDP.select(["weekday", "weekday_right", "len", "len_right", "diff"])
-min_diffDP = week_diffDP.select(pl.col("diff").min())
-max_diffDP = week_diffDP.select(pl.col("diff").max())
-mean_diffDP = week_diffDP.select(pl.col("diff").mean())
 
-
-print(f"Totale corse per giorno della settimana: {trips_weekday}")
-print(f"Totale corse per giorno della settimana con DP: {result}")
+print(f"Totale corse per giorno della settimana con DP, eps = {eps}: {result}")
 print(query_counts.summarize(alpha=0.05))
 
-print(f"Differenza (MIN, MEAN e MAX) tra i conteggi per giorno della settimana: {[min_diff.item(), mean_diff.item(), max_diff.item()]}")
-print(f"Differenza (MIN, MEAN e MAX) tra i conteggi per giorno della settimana con DP: {[min_diffDP.item(), mean_diffDP.item(), max_diffDP.item()]}")
-
-
-
-
-
-#crea grafico
-dfplot.plot_total_rides_comparison(trips_weekday, result, eps, num)
-
-
-
-#sample original dataset
-bikes = bike.sample(n = num, with_replacement = False, seed = 1234)
-
-#DP dataset
-dfs = bikes.lazy()
-
-trips_weekday = bikes.group_by("weekday").len()
-trips_weekday = trips_weekday.with_columns(pl.col("len").cast(pl.Int64))
-
-#difference
-week_diff = trips_weekday.join(trips_weekday, how = "cross")
-week_diff = week_diff.filter(pl.col("weekday") < pl.col("weekday_right"))
-week_diff = week_diff.with_columns((abs(pl.col("len") - pl.col("len_right"))).alias("diff"))
-week_diff = week_diff.select(["weekday", "weekday_right", "len", "len_right", "diff"])
-min_diff = week_diff.select(pl.col("diff").min())
-max_diff = week_diff.select(pl.col("diff").max())
-mean_diff = week_diff.select(pl.col("diff").mean())
-
-print(f"Totale corse per giorno della settimana: {trips_weekday}")
-print(f"Differenze: {week_diff}")
-print(f"Minima differenza tra i conteggi per giorno della settimana: {min_diff.item()}")
-print(f"Massima differenza tra i conteggi per giorno della settimana: {max_diff.item()}")
-print(f"Differenza media tra i conteggi per giorno della settimana: {mean_diff.item()}")
-
-#filename = f"bike/samplecsv/diff_{num}.csv"
-#week_diff.write_csv(filename)
-
 #invariant keys - giorni della settimana sono pubblici
-context = dp.Context.compositor(
-    data = dfs,
+eps1 = 0.001
+context1 = dp.Context.compositor(
+    data = df,
     privacy_unit = dp.unit_of(contributions=1),
-    privacy_loss = dp.loss_of(epsilon=eps),
+    privacy_loss = dp.loss_of(epsilon=eps1),
     split_evenly_over = 1,
     margins = [dp.polars.Margin(by=["weekday"], public_info="keys")]            
 )
 
-query_counts = (
-    context.query()
+query_counts1 = (
+    context1.query()
     .group_by("weekday")
     .agg(dp.len())
 )
-result = query_counts.release().collect()
-result = result.with_columns(pl.col("len").cast(pl.Int64))
-summary = query_counts.summarize(alpha=0.05)
-acc_value = summary.select("accuracy").to_series()[0]
+result1 = query_counts1.release().collect().sort("weekday")
+result1 = result1.with_columns(pl.col("len").cast(pl.Int64))
 
-print(f"Totale corse per giorno della settimana con DP: {result}")
-print(summary)
 
+
+print(f"Totale corse per giorno della settimana con DP, eps = {eps1}: {result1}")
+print(query_counts1.summarize(alpha=0.05))
+
+
+#crea grafici
 dfplot.plot_total_rides_comparison(trips_weekday, result, eps, num)
+dfplot.plot_total_rides_comparison(trips_weekday, result1, eps1, num)
+dfplot.plot_total_rides_comparison2(trips_weekday, result, result1, eps, eps1, num)
